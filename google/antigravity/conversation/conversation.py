@@ -81,7 +81,7 @@ class Conversation:
 
   async def send(
       self,
-      prompt: str | None,
+      prompt: types.Content | None,
       **kwargs: Any,
   ) -> None:
     """Sends a message to the agent.
@@ -112,7 +112,7 @@ class Conversation:
       self._enforce_max_history()
       yield step
 
-  async def chat(self, prompt: str) -> types.ChatResponse:
+  async def chat(self, prompt: types.Content) -> types.ChatResponse:
     """Sends a prompt and returns the complete response.
 
     This is a convenience wrapper around send() + receive_steps() that

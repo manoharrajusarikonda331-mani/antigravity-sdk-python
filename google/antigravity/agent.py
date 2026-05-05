@@ -302,7 +302,7 @@ class Agent:
     if self._conversation_cm:
       await self._conversation_cm.__aexit__(exc_type, exc_val, exc_tb)
 
-  async def chat(self, prompt: str) -> types.ChatResponse:
+  async def chat(self, prompt: types.Content) -> types.ChatResponse:
     """Sends a prompt and returns the final response."""
     if not self._conversation:
       raise RuntimeError(

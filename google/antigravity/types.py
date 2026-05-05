@@ -19,6 +19,8 @@ types. They are pure Python Pydantic V2 models with no proto dependencies.
 """
 
 import enum
+import mimetypes
+import pathlib
 from typing import Annotated, Any, Callable, List, Optional, Union
 
 import pydantic
@@ -557,3 +559,152 @@ class ChatResponse(pydantic.BaseModel):
   text: str
   steps: list[Step]
   structured_output: Any | None = None
+
+
+# =============================================================================
+# Multimodal Input & Part Primitives
+# =============================================================================
+
+SUPPORTED_MIME_TYPES = frozenset({
+    # --- Text Formats ---
+    "text/css",
+    "text/csv",
+    "text/html",
+    "text/javascript",
+    "text/plain",
+    "text/rtf",
+    "text/xml",
+    # --- Document / Application Formats ---
+    "application/json",
+    "application/pdf",
+    # --- Image Formats ---
+    "image/bmp",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    # --- Video Formats ---
+    "video/3gpp",
+    "video/avi",
+    "video/mp4",
+    "video/mpeg",
+    "video/mpg",
+    "video/quicktime",
+    "video/webm",
+    "video/wmv",
+    "video/x-flv",
+})
+
+
+_SORTED_MIME_TYPES = tuple(sorted(SUPPORTED_MIME_TYPES))
+
+
+class Blob(pydantic.BaseModel):
+  """Represents raw binary multimedia content assets."""
+
+  mime_type: str
+  data: bytes
+
+  @pydantic.field_validator("mime_type")
+  @classmethod
+  def validate_mime_type(cls, v: str) -> str:
+    """Validates that the MIME type is officially supported by Gemini API."""
+    if v not in SUPPORTED_MIME_TYPES:
+      raise ValueError(
+          f"Unsupported MIME type '{v}'. Allowed values: {_SORTED_MIME_TYPES}"
+      )
+    return v
+
+
+class Part(pydantic.BaseModel):
+  """Polymorphic data primitive representing one fragment of content.
+
+  Acts as an immutable tagged union wrapping either an inline text string
+  or a raw binary multimedia blob mutually-exclusively.
+  """
+
+  # Content Slots (Mutually Exclusive)
+  text: str | None = None
+  inline_data: Blob | None = None
+
+  # Metadata/Alt-text
+  description: str | None = None
+
+  model_config = pydantic.ConfigDict(extra="ignore", frozen=True)
+
+  # Strict Mutual Exclusion Constraint
+  @pydantic.model_validator(mode="after")
+  def validate_mutually_exclusive_slots(self) -> "Part":
+    occupied_slots = [
+        f for f in ["text", "inline_data"] if getattr(self, f) is not None
+    ]
+    if len(occupied_slots) != 1:
+      raise ValueError(
+          "A Part must occupy exactly one content slot. Occupied:"
+          f" {occupied_slots}"
+      )
+    return self
+
+  @classmethod
+  def from_text(cls, text: str) -> "Part":
+    """Initializes a Part instance containing a text string."""
+    return cls(text=text)
+
+  @classmethod
+  def from_file(
+      cls,
+      file_path: str | pathlib.Path,
+      mime_type: str | None = None,
+      description: str | None = None,
+  ) -> "Part":
+    """Creates a multimedia blob part by loading binary content from a file path.
+
+    Automatically infers or applies the correct MIME type modality.
+
+    Args:
+        file_path: filesystem string path or pathlib.Path object.
+        mime_type: Optional explicit MIME type override. When omitted, the type
+          is automatically guessed from the file extension.
+        description: Optional alt-text/metadata explaining the context of the
+          media to the model.
+
+    Returns:
+        A fully validated, initialized Part instance ready for agent.chat().
+
+    Raises:
+        FileNotFoundError: The target file path does not exist.
+        IsADirectoryError: The provided path targets an existing directory.
+        ValueError: The MIME type could not be inferred from the file extension.
+    """
+    path = pathlib.Path(file_path)
+
+    try:
+      data = path.read_bytes()
+    except FileNotFoundError as exc:
+      raise FileNotFoundError(f"File not found at path: '{path}'") from exc
+    except IsADirectoryError as exc:
+      raise IsADirectoryError(
+          f"Path is a directory, not a file: '{path}'"
+      ) from exc
+    except PermissionError as exc:
+      raise PermissionError(
+          f"Permission denied when reading path: '{path}'"
+      ) from exc
+    except OSError as exc:
+      raise OSError(f"Failed to read file at path '{path}': {exc}") from exc
+
+    if mime_type is None:
+      mime_type, _ = mimetypes.guess_type(str(path))
+      if mime_type is None:
+        raise ValueError(
+            f"Could not infer MIME type from file extension for path: '{path}'."
+            " Please pass an explicit valid mime_type argument, or ensure the"
+            " file name has a standard extension (e.g. .png, .pdf)."
+        )
+
+    return cls(
+        inline_data=Blob(mime_type=mime_type, data=data),
+        description=description,
+    )
+
+
+Content = str | Part | list[str | Part]

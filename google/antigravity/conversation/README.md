@@ -14,8 +14,8 @@ Key features:
 - **Turn Tracking**: It tracks where each turn (user prompt) starts in the history.
 - **Compaction Tracking**: It tracks where the model's context was compacted.
 - **Convenience Methods**:
-    - `chat(prompt)`: Sends a prompt and waits for the complete response, returning a `ChatResponse`.
-    - `send(prompt)`: Sends a prompt (non-blocking).
+    - `chat(prompt)`: Sends a prompt and waits for the complete response, returning a `ChatResponse`. Natively supports both standard strings and rich `types.Content` multimodal payloads (lists of text strings and `types.Part` files).
+    - `send(prompt)`: Sends a prompt turn (non-blocking). Accepts strings or complex multimodal payloads.
     - `receive_steps()`: Async iterator for receiving steps for the current turn.
 
 ## Usage Example

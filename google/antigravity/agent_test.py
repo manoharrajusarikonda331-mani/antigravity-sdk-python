@@ -20,6 +20,7 @@ from unittest import mock
 
 from google.antigravity import agent
 from google.antigravity import types
+from google.antigravity.connections import local_connection
 from google.antigravity.conversation import conversation
 from google.antigravity.hooks import hooks
 from google.antigravity.hooks import policy
@@ -75,6 +76,43 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
       self.assertEqual(response.text, "Hello back")
       self.assertEqual(len(response.steps), 1)
       mock_conversation.chat.assert_called_once_with("Hello")
+
+  @mock.patch.object(local_connection, "LocalConnectionStrategy", autospec=True)
+  @mock.patch.object(conversation.Conversation, "create", autospec=True)
+  async def test_agent_chat_multimodal_input(
+      self, mock_conv_create, mock_strategy_class
+  ):
+    """Verifies that the Agent public API method accepts multimodal Content payloads."""
+    mock_strategy_instance = mock_strategy_class.return_value
+    mock_strategy_instance.stop = mock.AsyncMock()
+
+    mock_conversation = mock.MagicMock(spec=conversation.Conversation)
+    mock_cm = mock.AsyncMock()
+    mock_cm.__aenter__.return_value = mock_conversation
+    mock_conv_create.return_value = mock_cm
+
+    mock_conversation.chat = mock.AsyncMock(
+        return_value=types.ChatResponse(
+            text="Analyzed image content",
+            steps=[
+                types.Step(
+                    is_final_response=True, content="Analyzed image content"
+                )
+            ],
+        )
+    )
+
+    config = agent.AgentConfig(system_instructions="test")
+    async with agent.Agent(config) as ag:
+      multimodal_prompt = [
+          "Look at this:",
+          types.Part(
+              inline_data=types.Blob(mime_type="image/png", data=b"png_bytes")
+          ),
+      ]
+      response = await ag.chat(multimodal_prompt)
+      self.assertEqual(response.text, "Analyzed image content")
+      mock_conversation.chat.assert_called_once_with(multimodal_prompt)
 
   @mock.patch(
       "google.antigravity.agent."

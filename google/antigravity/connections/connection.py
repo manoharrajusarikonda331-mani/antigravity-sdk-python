@@ -46,7 +46,7 @@ class Connection(abc.ABC):
     return ""
 
   @abc.abstractmethod
-  async def send(self, prompt: str, **kwargs: Any) -> None:
+  async def send(self, prompt: types.Content | None, **kwargs: Any) -> None:
     """Sends a prompt to the agent.
 
     Args:

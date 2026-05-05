@@ -75,6 +75,22 @@ class ConversationSendTest(unittest.IsolatedAsyncioTestCase):
     mock_connection.wait_for_idle.assert_called_once()
     mock_connection.send.assert_called_once_with("hello")
 
+  async def test_send_multimodal_input(self):
+    """Verifies that send accepts multimodal Content payloads and delegates to connection."""
+    mock_connection = mock.AsyncMock(spec=connection.Connection)
+    conv = conversation.Conversation(mock_connection)
+
+    multimodal_prompt = [
+        "Context string",
+        types.Part(
+            inline_data=types.Blob(mime_type="application/pdf", data=b"pdf")
+        ),
+    ]
+    await conv.send(multimodal_prompt)
+
+    mock_connection.wait_for_idle.assert_called_once()
+    mock_connection.send.assert_called_once_with(multimodal_prompt)
+
   async def test_send_records_turn_boundary(self):
     """Verifies each send records a turn boundary index in the history."""
     mock_connection = mock.AsyncMock(spec=connection.Connection)
@@ -294,6 +310,32 @@ class ConversationChatTest(unittest.IsolatedAsyncioTestCase):
     self.assertIsInstance(result, types.ChatResponse)
     self.assertEqual(result.text, "the answer")
     self.assertEqual(len(result.steps), 2)
+
+  async def test_chat_multimodal_input(self):
+    """Verifies that the chat convenience wrapper accepts and forwards multimodal Content prompts."""
+    final_step = _make_step("image analysis done", step_index=1, is_final=True)
+    mock_connection = mock.MagicMock(spec=connection.Connection)
+    mock_connection.wait_for_idle = mock.AsyncMock()
+    mock_connection.send = mock.AsyncMock()
+
+    async def mock_generator():
+      yield final_step
+
+    mock_connection.receive_steps.return_value = mock_generator()
+    conv = conversation.Conversation(mock_connection)
+
+    multimodal_prompt = [
+        "Analyze this blueprint:",
+        types.Part(
+            inline_data=types.Blob(
+                mime_type="image/png", data=b"blueprint_bytes"
+            )
+        ),
+    ]
+    result = await conv.chat(multimodal_prompt)
+
+    self.assertEqual(result.text, "image analysis done")
+    mock_connection.send.assert_called_once_with(multimodal_prompt)
 
   async def test_chat_records_in_history(self):
     """Verifies chat() steps are accumulated in conversation history."""

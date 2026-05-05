@@ -18,6 +18,8 @@ Validates model construction, validation, immutability, forward compatibility,
 and the AntigravityValidationError wrapper.
 """
 
+import pathlib
+import tempfile
 import unittest
 
 from absl.testing import absltest
@@ -701,8 +703,6 @@ class AntigravityConnectionErrorTest(unittest.TestCase):
     """Verifies that the message is stored and retrievable."""
     err = types.AntigravityConnectionError("timeout")
     self.assertEqual(str(err), "timeout")
-
-
 class SessionConfigTest(unittest.TestCase):
   """Tests for the SessionConfig Pydantic model."""
 
@@ -788,6 +788,117 @@ class SessionConfigTest(unittest.TestCase):
     config = types.SessionConfig()
     config.conversation_id = "new-id"
     self.assertEqual(config.conversation_id, "new-id")
+
+
+class PartTest(unittest.TestCase):
+  """Validates the unified Part Pydantic model and its factories."""
+
+  def test_basic_construction(self):
+    """Verifies that a Part can be successfully constructed with valid arguments."""
+    part = types.Part(
+        inline_data=types.Blob(mime_type="image/png", data=b"fake_png_data"),
+        description="test diagram",
+    )
+    self.assertEqual(part.inline_data.mime_type, "image/png")
+    self.assertEqual(part.inline_data.data, b"fake_png_data")
+    self.assertEqual(part.description, "test diagram")
+
+  def test_default_description_is_none(self):
+    """Verifies that description defaults to None when omitted."""
+    part = types.Part(
+        inline_data=types.Blob(mime_type="application/pdf", data=b"pdf_bytes")
+    )
+    self.assertIsNone(part.description)
+
+  def test_unsupported_mime_type_raises(self):
+    """Verifies that an unsupported MIME type triggers a Pydantic ValidationError."""
+    with self.assertRaises(pydantic.ValidationError):
+      types.Blob(
+          mime_type="image/gif", data=b"gif_bytes"
+      )  # GIF is not supported.
+
+  def test_text_part_contains_flat_text(self):
+    """Verifies that a text Part correctly contains the flat string value."""
+    part = types.Part.from_text(text="hello world")
+    self.assertEqual(part.text, "hello world")
+    self.assertIsNone(part.inline_data)
+
+  def test_text_property_returns_none_for_binaries(self):
+    """Verifies that the text property returns None for non-text modalities."""
+    part = types.Part(
+        inline_data=types.Blob(mime_type="image/jpeg", data=b"jpeg_bytes")
+    )
+    self.assertIsNone(part.text)
+
+  def test_from_file_success(self):
+    """Verifies that from_file factory reads bytes and infers MIME type successfully."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+      tmp_file = pathlib.Path(tmpdir) / "sample_doc.pdf"
+      fake_bytes = b"%PDF-1.4 sample pdf content"
+      tmp_file.write_bytes(fake_bytes)
+
+      part = types.Part.from_file(tmp_file, description="annual report")
+      self.assertEqual(part.inline_data.mime_type, "application/pdf")
+      self.assertEqual(part.inline_data.data, fake_bytes)
+      self.assertEqual(part.description, "annual report")
+
+  def test_from_file_non_existent_path_raises_error(self):
+    """Verifies that passing a non-existent path triggers FileNotFoundError."""
+    with self.assertRaises(FileNotFoundError):
+      types.Part.from_file("non_existent_file_xyz.png")
+
+  def test_from_file_directory_path_raises_error(self):
+    """Verifies that passing a path targeting a directory triggers IsADirectoryError."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+      with self.assertRaises(IsADirectoryError):
+        types.Part.from_file(tmpdir)
+
+  def test_from_file_with_explicit_mime_type_override(self):
+    """Verifies that passing an explicit mime_type override bypasses extension guessing."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+      # Create an extensionless file path containing raw bytes
+      tmp_file = pathlib.Path(tmpdir) / "unknown_file_system_node"
+      fake_bytes = b"fake_png_data_stream_content"
+      tmp_file.write_bytes(fake_bytes)
+
+      # Manually force a mime_type override parameter
+      part = types.Part.from_file(
+          tmp_file,
+          mime_type="image/png",
+          description="forced manual type override",
+      )
+      self.assertEqual(part.inline_data.mime_type, "image/png")
+      self.assertEqual(part.inline_data.data, fake_bytes)
+      self.assertEqual(part.description, "forced manual type override")
+
+  def test_from_file_inference_failure_raises_clear_value_error(self):
+    """Verifies that an extensionless path failure raises a descriptive ValueError."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+      tmp_file = pathlib.Path(tmpdir) / "extensionless_data_blob"
+      tmp_file.write_bytes(b"some_anonymous_bytes")
+
+      # Omitting mime_type on an extensionless path should throw ValueError
+      with self.assertRaises(ValueError) as ctx:
+        types.Part.from_file(tmp_file)
+
+      self.assertIn("Could not infer MIME type", str(ctx.exception))
+      self.assertIn(
+          "Please pass an explicit valid mime_type", str(ctx.exception)
+      )
+
+  def test_part_sum_type_mutual_exclusion(self):
+    """Verifies that a Part cannot occupy more than one content slot simultaneously."""
+    with self.assertRaises(pydantic.ValidationError):
+      types.Part(
+          text="Conflict text",
+          inline_data=types.Blob(mime_type="image/png", data=b"png_data"),
+      )
+
+  def test_part_from_text_constructor_success(self):
+    """Verifies that Part.from_text constructor sets text properties flawlessly."""
+    part = types.Part.from_text(text="Hello text part")
+    self.assertEqual(part.text, "Hello text part")
+    self.assertIsNone(part.inline_data)
 
 
 if __name__ == "__main__":

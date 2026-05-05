@@ -86,6 +86,23 @@ asyncio.run(main())
 
 ## Features
 
+### Multimodal Ingestion
+
+Pass rich multimedia file attachments (images, videos, audio, and documents) to the agent alongside textual instruction prompt lists:
+
+```python
+from google.antigravity import Agent, Part
+
+async with Agent(system_instructions="You are an expert software architect.") as agent:
+    # Load local multimedia assets seamlessly via Part.from_file
+    image_part = Part.from_file("diagram.png", description="System design chart")
+    
+    # Send a mixed content list
+    prompt = ["Analyze this architecture chart and list three security vulnerabilities:", image_part]
+    response = await agent.chat(prompt)
+    print(response)
+```
+
 ### Custom Tools
 
 Register Python functions as tools that the agent can call:

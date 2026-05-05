@@ -65,7 +65,7 @@ class LocalConnectionTest(unittest.IsolatedAsyncioTestCase):
 
   def setUp(self):
     super().setUp()
-    self.mock_process = mock.MagicMock()
+    self.mock_process = mock.MagicMock(spec=subprocess.Popen)
     self.mock_ws = FakeWebSocket()
     self.tool_runner = tool_runner.ToolRunner()
 
@@ -2098,9 +2098,6 @@ class LocalConnectionBuiltinDecideHookTest(
     self.assertFalse(sent["toolConfirmation"]["accepted"])
 
 
-
-
-
 class LocalConnectionHookAcceptanceTest(unittest.IsolatedAsyncioTestCase):
   """Verifies that previously-unsupported hooks are now accepted."""
 
@@ -2448,6 +2445,101 @@ class LocalConnectionUnexpectedCloseTest(unittest.IsolatedAsyncioTestCase):
     # Should only see the sentinel, not an error.
     item = await asyncio.wait_for(conn._step_queue.get(), timeout=2)
     self.assertIsNone(item)
+
+
+class LocalConnectionSendTest(unittest.IsolatedAsyncioTestCase):
+  """Validates multi-modal coercion and InputEvent serialization inside LocalConnection.send()."""
+
+  def setUp(self):
+    super().setUp()
+    self.mock_process = mock.MagicMock()
+    self.mock_ws = FakeWebSocket()
+
+  async def test_send_flat_string_populates_user_input(self):
+    """Verifies that a standard string prompt maps to the user_input proto field."""
+    conn = local_connection.LocalConnection(
+        process=self.mock_process,
+        ws=self.mock_ws,
+    )
+    await conn.send("Standard text prompt")
+
+    self.assertEqual(len(self.mock_ws.sent_messages), 1)
+    sent_data = json.loads(self.mock_ws.sent_messages[0])
+
+    self.assertEqual(sent_data.get("userInput"), "Standard text prompt")
+    self.assertNotIn("complexUserInput", sent_data)
+
+  async def test_send_none_prompt_populates_blank_string(self):
+    """Verifies that passing a prompt of None maps to a blank userInput string frame."""
+    conn = local_connection.LocalConnection(
+        process=self.mock_process,
+        ws=self.mock_ws,
+    )
+    await conn.send(None)
+
+    self.assertEqual(len(self.mock_ws.sent_messages), 1)
+    sent_data = json.loads(self.mock_ws.sent_messages[0])
+
+    # Assert it sets userInput to a blank string and does not use complex inputs
+    self.assertEqual(sent_data.get("userInput"), "")
+    self.assertNotIn("complexUserInput", sent_data)
+
+  async def test_send_single_part_populates_complex_user_input(self):
+    """Verifies that a single Part object maps to the complex_user_input parts list."""
+    conn = local_connection.LocalConnection(
+        process=self.mock_process,
+        ws=self.mock_ws,
+    )
+    image_part = types.Part(
+        inline_data=types.Blob(mime_type="image/png", data=b"fake_png"),
+        description="logo image",
+    )
+    await conn.send(image_part)
+
+    self.assertEqual(len(self.mock_ws.sent_messages), 1)
+    sent_data = json.loads(self.mock_ws.sent_messages[0])
+
+    self.assertNotIn("userInput", sent_data)
+    self.assertIn("complexUserInput", sent_data)
+
+    parts = sent_data["complexUserInput"]["parts"]
+    self.assertEqual(len(parts), 1)
+    self.assertIn("media", parts[0])
+    media = parts[0]["media"]
+    self.assertEqual(media["mimeType"], "image/png")
+    self.assertEqual(media["description"], "logo image")
+    # Protobuf JSON automatically base64-encodes binary bytes
+    self.assertEqual(media["data"], "ZmFrZV9wbmc=")  # b"fake_png"
+
+  async def test_send_mixed_list_populates_multiple_complex_parts(self):
+    """Verifies that a list containing both strings and Part items compiles correctly to spec."""
+    conn = local_connection.LocalConnection(
+        process=self.mock_process,
+        ws=self.mock_ws,
+    )
+    mixed_prompt = [
+        "Context text instruction.",
+        types.Part(
+            inline_data=types.Blob(
+                mime_type="application/pdf", data=b"fake_pdf"
+            )
+        ),
+    ]
+    await conn.send(mixed_prompt)
+
+    self.assertEqual(len(self.mock_ws.sent_messages), 1)
+    sent_data = json.loads(self.mock_ws.sent_messages[0])
+
+    self.assertNotIn("userInput", sent_data)
+    self.assertIn("complexUserInput", sent_data)
+
+    parts = sent_data["complexUserInput"]["parts"]
+    self.assertEqual(len(parts), 2)
+
+    self.assertEqual(parts[0]["text"], "Context text instruction.")
+
+    self.assertEqual(parts[1]["media"]["mimeType"], "application/pdf")
+    self.assertEqual(parts[1]["media"]["data"], "ZmFrZV9wZGY=")  # b"fake_pdf"
 
 
 

@@ -287,7 +287,6 @@ class LocalConnection(connection.Connection):
     self._stderr_lines: collections.deque[str] = collections.deque(maxlen=100)
     self._stderr_thread: threading.Thread | None = None
 
-
     # Dispatch session start hook.
     if self._hook_runner and self._hook_runner.on_session_start_hooks:
       self._run_in_background(self._hook_runner.dispatch_session_start())
@@ -302,7 +301,7 @@ class LocalConnection(connection.Connection):
     """Returns the conversation identifier, if one exists."""
     return self._cascade_id or ""
 
-  async def send(self, prompt: str) -> None:
+  async def send(self, prompt: types.Content | None) -> None:
     """Sends a prompt to the agent."""
     self._cancelled = False
     self._is_idle.clear()
@@ -320,7 +319,18 @@ class LocalConnection(connection.Connection):
         )
         self._is_idle.set()
         return
-    event = localharness_pb2.InputEvent(user_input=prompt)
+
+    if prompt is None:
+      event = localharness_pb2.InputEvent(user_input="")
+    elif isinstance(prompt, str):
+      event = localharness_pb2.InputEvent(user_input=prompt)
+    else:
+      parts_list = prompt if isinstance(prompt, list) else [prompt]
+      user_input_pb = localharness_pb2.UserInput(
+          parts=[_to_proto_part(p) for p in parts_list]
+      )
+      event = localharness_pb2.InputEvent(complex_user_input=user_input_pb)
+
     await self._ws.send(json_format.MessageToJson(event))
 
   async def receive_steps(self) -> AsyncIterator[LocalConnectionStep]:
@@ -564,8 +574,6 @@ class LocalConnection(connection.Connection):
                 step_obj.content
             )
 
-
-
           # 4. Process wait requests if this is a wait state
           if (
               step_update.state
@@ -761,7 +769,6 @@ class LocalConnection(connection.Connection):
       )
       allow = res.allow
 
-
     resp = localharness_pb2.ToolConfirmation(
         trajectory_id=step_update.trajectory_id,
         step_index=step_update.step_index,
@@ -900,6 +907,33 @@ class LocalConnection(connection.Connection):
     """Sends a trigger message to the agent."""
     event = localharness_pb2.InputEvent(automated_trigger=content)
     await self._ws.send(json_format.MessageToJson(event))
+
+
+def _to_proto_part(part: str | types.Part) -> localharness_pb2.UserInput.Part:
+  """Helper factory converting dynamic prompt fragments into proto Parts."""
+  if isinstance(part, str):
+    return localharness_pb2.UserInput.Part(text=part)
+
+  if isinstance(part, types.Part):
+    if part.text is not None:
+      return localharness_pb2.UserInput.Part(text=part.text)
+
+    if part.inline_data is not None:
+      blob = part.inline_data
+      if part.description:
+        media_pb = localharness_pb2.UserInput.Media(
+            mime_type=blob.mime_type,
+            data=blob.data,
+            description=part.description,
+        )
+      else:
+        media_pb = localharness_pb2.UserInput.Media(
+            mime_type=blob.mime_type,
+            data=blob.data,
+        )
+      return localharness_pb2.UserInput.Part(media=media_pb)
+
+  raise TypeError(f"Unsupported prompt part type: {type(part)}")
 
 
 def _get_default_binary_path() -> str:
