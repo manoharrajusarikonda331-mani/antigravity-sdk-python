@@ -16,7 +16,7 @@
 
 from google.antigravity.agent import Agent
 from google.antigravity.connections.connection import AgentConfig
-from google.antigravity.connections.local_connection import LocalAgentConfig
+from google.antigravity.connections.local import LocalAgentConfig
 from google.antigravity.tools.tool_context import ToolContext
 from google.antigravity.types import CapabilitiesConfig
 from google.antigravity.types import GeminiConfig

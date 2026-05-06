@@ -20,7 +20,8 @@ from unittest import mock
 
 from google.antigravity import agent
 from google.antigravity import types
-from google.antigravity.connections import local_connection
+from google.antigravity.connections import local as local_connection
+from google.antigravity.connections.local import local_connection as lc_module
 from google.antigravity.conversation import conversation
 from google.antigravity.hooks import hooks
 from google.antigravity.hooks import policy
@@ -30,7 +31,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_lifecycle(self, mock_conv_create, mock_strategy_class):
@@ -50,7 +51,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_chat(self, mock_conv_create, mock_strategy_class):
@@ -79,7 +80,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
       self.assertEqual(len(response.steps), 1)
       mock_conversation.chat.assert_called_once_with("Hello")
 
-  @mock.patch.object(local_connection, "LocalConnectionStrategy", autospec=True)
+  @mock.patch.object(lc_module, "LocalConnectionStrategy", autospec=True)
   @mock.patch.object(conversation.Conversation, "create", autospec=True)
   async def test_agent_chat_multimodal_input(
       self, mock_conv_create, mock_strategy_class
@@ -119,7 +120,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_read_only_default(
@@ -142,7 +143,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_requires_policies_in_write_mode(
@@ -164,7 +165,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_policy_guard_explicit_write_tool(
@@ -185,7 +186,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_policy_guard_explicit_all_tools(
@@ -206,7 +207,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_policy_guard_empty_disabled_tools(
@@ -225,7 +226,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_policy_guard_read_only_explicit_passes(
@@ -245,7 +246,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_policy_guard_write_tools_with_policy_passes(
@@ -264,7 +265,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_register_hook(
@@ -298,7 +299,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   @mock.patch(
@@ -358,7 +359,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_register_hook_before_start(
@@ -388,7 +389,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_register_trigger_after_start(
@@ -412,7 +413,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_with_policies(
@@ -436,7 +437,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_write_mode_with_policies(
@@ -465,7 +466,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_mcp_server_unknown_type(
@@ -509,7 +510,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_api_key_env(self, mock_conv_create, mock_strategy_class):
@@ -532,7 +533,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_model_sugar_flows_to_strategy(
@@ -554,7 +555,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
       self.assertEqual(gemini_config.models.default.name, "gemini-2.5-pro")
 
   @mock.patch(
-      "google.antigravity.connections.local_connection.LocalConnectionStrategy"
+      "google.antigravity.connections.local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_with_system_instructions_object(
@@ -573,7 +574,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_with_session_config(
@@ -599,7 +600,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_with_skills_paths(
@@ -622,7 +623,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   @mock.patch("google.antigravity.agent.bridge.McpBridge")
@@ -665,7 +666,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   @mock.patch("asyncio.to_thread")
@@ -703,7 +704,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   @mock.patch("asyncio.to_thread")
@@ -726,7 +727,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   @mock.patch("asyncio.to_thread")
@@ -749,7 +750,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
 
   @mock.patch(
       "google.antigravity.connections."
-      "local_connection.LocalConnectionStrategy"
+      "local.local_connection.LocalConnectionStrategy"
   )
   @mock.patch.object(conversation.Conversation, "create")
   async def test_agent_connection_after_start(
@@ -863,7 +864,7 @@ class AgentConfigTest(unittest.TestCase):
     self.assertEqual(config.gemini_config.models.default.name, "custom-model")
     self.assertEqual(config.gemini_config.api_key, "key-only")
 
-  @mock.patch.object(local_connection, "LocalConnectionStrategy", autospec=True)
+  @mock.patch.object(lc_module, "LocalConnectionStrategy", autospec=True)
   @mock.patch.object(conversation.Conversation, "create", autospec=True)
   async def test_agent_with_response_schema(
       self, mock_conv_create, mock_strategy_class

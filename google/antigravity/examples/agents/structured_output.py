@@ -20,7 +20,7 @@ import logging
 import pydantic
 
 from google.antigravity import agent
-from google.antigravity.connections.local_connection import LocalAgentConfig
+from google.antigravity.connections.local.local_connection_config import LocalAgentConfig
 
 
 class ActionItem(pydantic.BaseModel):

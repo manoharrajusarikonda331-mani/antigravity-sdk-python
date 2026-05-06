@@ -37,7 +37,7 @@ import asyncio
 import logging
 
 from google.antigravity.agent import Agent
-from google.antigravity.connections.local_connection import LocalAgentConfig
+from google.antigravity.connections.local.local_connection_config import LocalAgentConfig
 
 _PASS_TOKEN = "[PASS]"
 _MAX_CONSECUTIVE_PASSES = 2  # agent exits after N passes in a row

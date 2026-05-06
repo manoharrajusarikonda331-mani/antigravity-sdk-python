@@ -40,8 +40,8 @@ from absl import app
 from absl import logging
 
 from google.antigravity import types
-from google.antigravity.connections import local_connection as lc
-from google.antigravity.connections.local_connection import LocalConnectionStrategy
+from google.antigravity.connections.local.local_connection import LocalConnectionStrategy
+from google.antigravity.connections.local import types as local_types
 from google.antigravity.conversation.conversation import Conversation
 from google.antigravity.hooks import hook_runner as hooks_runner
 from google.antigravity.hooks import hooks
@@ -88,20 +88,20 @@ class LogBuiltinPostTool(hooks.PostToolCallHook):
     result = data.result
     print(f"[PostTool] Tool: {data.name}")
 
-    if isinstance(result, lc.RunCommandResult):
+    if isinstance(result, local_types.RunCommandResult):
       print(f"[PostTool] Command output: {result.output[:200]}")
-    elif isinstance(result, lc.ListDirectoryResult):
+    elif isinstance(result, local_types.ListDirectoryResult):
       print(f"[PostTool] {len(result.entries)} entries:")
       for entry in result.entries:
         kind = "dir" if entry.is_directory else f"{entry.file_size}b"
         print(f"[PostTool]   {entry.name} ({kind})")
-    elif isinstance(result, lc.SearchDirectoryResult):
+    elif isinstance(result, local_types.SearchDirectoryResult):
       print(f"[PostTool] Search matched {result.num_results} results")
-    elif isinstance(result, lc.FindFileResult):
+    elif isinstance(result, local_types.FindFileResult):
       print(f"[PostTool] Find output: {result.output[:200]}")
-    elif isinstance(result, lc.EditFileResult):
+    elif isinstance(result, local_types.EditFileResult):
       print(f"[PostTool] Edit summary: {result.summary[:200]}")
-    elif isinstance(result, lc.GenerateImageResult):
+    elif isinstance(result, local_types.GenerateImageResult):
       print(f"[PostTool] Generated image: {result.image_name}")
     else:
       # Fallback for unstructured results (e.g. view_file toolSummary).

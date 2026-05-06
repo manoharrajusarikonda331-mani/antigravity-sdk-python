@@ -18,7 +18,7 @@ import asyncio
 import logging
 from google.antigravity import types
 import google.antigravity.agent as agent_module
-from google.antigravity.connections.local_connection import LocalAgentConfig
+from google.antigravity.connections.local.local_connection_config import LocalAgentConfig
 from google.antigravity.examples import example_policies
 
 

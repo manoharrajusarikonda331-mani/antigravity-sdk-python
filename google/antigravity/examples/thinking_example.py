@@ -36,7 +36,7 @@ from absl import flags
 from absl import logging
 
 from google.antigravity import types
-from google.antigravity.connections.local_connection import LocalConnectionStrategy
+from google.antigravity.connections.local.local_connection import LocalConnectionStrategy
 from google.antigravity.conversation.conversation import Conversation
 from google.antigravity.utils import cli_utils
 

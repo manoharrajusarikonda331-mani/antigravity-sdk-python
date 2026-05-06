@@ -19,7 +19,7 @@ import logging
 from typing import Any
 from google.antigravity import types
 from google.antigravity.agent import Agent
-from google.antigravity.connections.local_connection import LocalAgentConfig
+from google.antigravity.connections.local.local_connection_config import LocalAgentConfig
 from google.antigravity.hooks import hooks
 from google.antigravity.triggers import triggers as triggers_module
 from google.antigravity.triggers.helpers import every

@@ -45,7 +45,7 @@ import sys
 from absl import app
 from absl import logging
 
-from google.antigravity.connections import local_connection
+from google.antigravity.connections.local import local_connection
 from google.antigravity.conversation import conversation
 
 

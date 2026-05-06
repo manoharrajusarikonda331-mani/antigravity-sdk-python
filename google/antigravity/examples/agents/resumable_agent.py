@@ -27,7 +27,7 @@ import tempfile
 
 
 from google.antigravity.agent import Agent
-from google.antigravity.connections.local_connection import LocalAgentConfig
+from google.antigravity.connections.local.local_connection_config import LocalAgentConfig
 
 
 async def main():
