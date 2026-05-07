@@ -18,7 +18,10 @@ These are the canonical SDK boundary types. All public SDK interfaces use these
 types. They are pure Python Pydantic V2 models with no proto dependencies.
 """
 
+from __future__ import annotations
+
 import enum
+import itertools
 import mimetypes
 import pathlib
 from typing import Annotated, Any, Callable, List, Optional, Union
@@ -585,11 +588,19 @@ class ChatResponse(pydantic.BaseModel):
 
 
 # =============================================================================
-# Multimodal Input & Part Primitives
+# Input Content Primitives
 # =============================================================================
 
-SUPPORTED_MIME_TYPES = frozenset({
-    # --- Text Formats ---
+SUPPORTED_IMAGE_MIMES = frozenset({
+    "image/bmp",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+})
+
+SUPPORTED_DOCUMENT_MIMES = frozenset({
+    "application/pdf",
+    "application/json",
     "text/css",
     "text/csv",
     "text/html",
@@ -597,15 +608,21 @@ SUPPORTED_MIME_TYPES = frozenset({
     "text/plain",
     "text/rtf",
     "text/xml",
-    # --- Document / Application Formats ---
-    "application/json",
-    "application/pdf",
-    # --- Image Formats ---
-    "image/bmp",
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    # --- Video Formats ---
+})
+
+SUPPORTED_AUDIO_MIMES = frozenset({
+    "audio/wav",
+    "audio/mp3",
+    "audio/aac",
+    "audio/ogg",
+    "audio/flac",
+    "audio/opus",
+    "audio/mpeg",
+    "audio/m4a",
+    "audio/l16",
+})
+
+SUPPORTED_VIDEO_MIMES = frozenset({
     "video/3gpp",
     "video/avi",
     "video/mp4",
@@ -618,116 +635,148 @@ SUPPORTED_MIME_TYPES = frozenset({
 })
 
 
-_SORTED_MIME_TYPES = tuple(sorted(SUPPORTED_MIME_TYPES))
+def _read_file_safely(path: str | pathlib.Path) -> bytes:
+  """Robustly loads local file bytes with comprehensive error wrapping."""
+  file_path = pathlib.Path(path)
+  try:
+    return file_path.read_bytes()
+  except FileNotFoundError as exc:
+    raise FileNotFoundError(f"File not found at path: '{file_path}'") from exc
+  except IsADirectoryError as exc:
+    raise IsADirectoryError(
+        f"Path is a directory, not a file: '{file_path}'"
+    ) from exc
+  except PermissionError as exc:
+    raise PermissionError(
+        f"Permission denied when reading path: '{file_path}'"
+    ) from exc
+  except OSError as exc:
+    raise OSError(f"Failed to read file at path '{file_path}': {exc}") from exc
 
 
-class Blob(pydantic.BaseModel):
-  """Represents raw binary multimedia content assets."""
+class _BaseMedia(pydantic.BaseModel):
+  """Base class for all rich multimedia content attachment primitives."""
 
-  mime_type: str
   data: bytes
+  mime_type: str
+  description: str | None = None
+
+  @classmethod
+  def from_file(
+      cls, path: str | pathlib.Path, description: str | None = None
+  ) -> _BaseMedia:
+    """Instantiates a media content primitive from a local file path."""
+    file_path = pathlib.Path(path)
+    data = _read_file_safely(file_path)
+    mime_guess, _ = mimetypes.guess_type(file_path)
+    return cls(
+        data=data,
+        mime_type=mime_guess or "",
+        description=description,
+    )
+
+  model_config = pydantic.ConfigDict(frozen=True)
+
+
+class Image(_BaseMedia):
+  """Image content attachment primitive."""
 
   @pydantic.field_validator("mime_type")
   @classmethod
   def validate_mime_type(cls, v: str) -> str:
-    """Validates that the MIME type is officially supported by Gemini API."""
-    if v not in SUPPORTED_MIME_TYPES:
-      raise ValueError(
-          f"Unsupported MIME type '{v}'. Allowed values: {_SORTED_MIME_TYPES}"
-      )
+    """Validates that the MIME type is supported for Image content."""
+    if v not in SUPPORTED_IMAGE_MIMES:
+      raise ValueError(f"Unsupported Image MIME type: '{v}'")
     return v
 
 
-class Part(pydantic.BaseModel):
-  """Polymorphic data primitive representing one fragment of content.
+class Document(_BaseMedia):
+  """Document content attachment primitive."""
 
-  Acts as an immutable tagged union wrapping either an inline text string
-  or a raw binary multimedia blob mutually-exclusively.
-  """
-
-  # Content Slots (Mutually Exclusive)
-  text: str | None = None
-  inline_data: Blob | None = None
-
-  # Metadata/Alt-text
-  description: str | None = None
-
-  model_config = pydantic.ConfigDict(extra="ignore", frozen=True)
-
-  # Strict Mutual Exclusion Constraint
-  @pydantic.model_validator(mode="after")
-  def validate_mutually_exclusive_slots(self) -> "Part":
-    occupied_slots = [
-        f for f in ["text", "inline_data"] if getattr(self, f) is not None
-    ]
-    if len(occupied_slots) != 1:
-      raise ValueError(
-          "A Part must occupy exactly one content slot. Occupied:"
-          f" {occupied_slots}"
-      )
-    return self
-
+  @pydantic.field_validator("mime_type")
   @classmethod
-  def from_text(cls, text: str) -> "Part":
-    """Initializes a Part instance containing a text string."""
-    return cls(text=text)
+  def validate_mime_type(cls, v: str) -> str:
+    """Validates that the MIME type is supported for Document content."""
+    if v not in SUPPORTED_DOCUMENT_MIMES:
+      raise ValueError(f"Unsupported Document MIME type: '{v}'")
+    return v
 
+
+class Audio(_BaseMedia):
+  """Audio content attachment primitive."""
+
+  @pydantic.field_validator("mime_type")
   @classmethod
-  def from_file(
-      cls,
-      file_path: str | pathlib.Path,
-      mime_type: str | None = None,
-      description: str | None = None,
-  ) -> "Part":
-    """Creates a multimedia blob part by loading binary content from a file path.
+  def validate_mime_type(cls, v: str) -> str:
+    """Validates that the MIME type is supported for Audio content."""
+    if v not in SUPPORTED_AUDIO_MIMES:
+      raise ValueError(f"Unsupported Audio MIME type: '{v}'")
+    return v
 
-    Automatically infers or applies the correct MIME type modality.
 
-    Args:
-        file_path: filesystem string path or pathlib.Path object.
-        mime_type: Optional explicit MIME type override. When omitted, the type
-          is automatically guessed from the file extension.
-        description: Optional alt-text/metadata explaining the context of the
-          media to the model.
+class Video(_BaseMedia):
+  """Video content attachment primitive."""
 
-    Returns:
-        A fully validated, initialized Part instance ready for agent.chat().
+  @pydantic.field_validator("mime_type")
+  @classmethod
+  def validate_mime_type(cls, v: str) -> str:
+    """Validates that the MIME type is supported for Video content."""
+    if v not in SUPPORTED_VIDEO_MIMES:
+      raise ValueError(f"Unsupported Video MIME type: '{v}'")
+    return v
 
-    Raises:
-        FileNotFoundError: The target file path does not exist.
-        IsADirectoryError: The provided path targets an existing directory.
-        ValueError: The MIME type could not be inferred from the file extension.
-    """
-    path = pathlib.Path(file_path)
 
-    try:
-      data = path.read_bytes()
-    except FileNotFoundError as exc:
-      raise FileNotFoundError(f"File not found at path: '{path}'") from exc
-    except IsADirectoryError as exc:
-      raise IsADirectoryError(
-          f"Path is a directory, not a file: '{path}'"
-      ) from exc
-    except PermissionError as exc:
-      raise PermissionError(
-          f"Permission denied when reading path: '{path}'"
-      ) from exc
-    except OSError as exc:
-      raise OSError(f"Failed to read file at path '{path}': {exc}") from exc
+ContentPrimitive = str | Image | Document | Audio | Video
+Content = ContentPrimitive | list[ContentPrimitive]
 
-    if mime_type is None:
-      mime_type, _ = mimetypes.guess_type(str(path))
-      if mime_type is None:
-        raise ValueError(
-            f"Could not infer MIME type from file extension for path: '{path}'."
-            " Please pass an explicit valid mime_type argument, or ensure the"
-            " file name has a standard extension (e.g. .png, .pdf)."
-        )
 
-    return cls(
-        inline_data=Blob(mime_type=mime_type, data=data),
-        description=description,
+def from_file(
+    path: str | pathlib.Path, description: str | None = None
+) -> Image | Document | Audio | Video:
+  """Automatically resolves a local file path into the correct semantic Content primitive."""
+  file_path = pathlib.Path(path)
+  data = _read_file_safely(file_path)
+
+  mime_guess, _ = mimetypes.guess_type(file_path)
+  if not mime_guess:
+    raise ValueError(
+        f"Could not infer a valid MIME type for extension: '{file_path.suffix}'"
     )
 
-
-Content = str | Part | list[str | Part]
+  if mime_guess in SUPPORTED_IMAGE_MIMES:
+    return Image(
+        data=data,
+        mime_type=mime_guess,
+        description=description,
+    )
+  elif mime_guess in SUPPORTED_DOCUMENT_MIMES:
+    return Document(
+        data=data,
+        mime_type=mime_guess,
+        description=description,
+    )
+  elif mime_guess in SUPPORTED_AUDIO_MIMES:
+    return Audio(
+        data=data,
+        mime_type=mime_guess,
+        description=description,
+    )
+  elif mime_guess in SUPPORTED_VIDEO_MIMES:
+    return Video(
+        data=data,
+        mime_type=mime_guess,
+        description=description,
+    )
+  else:
+    all_supported = list(
+        itertools.chain(
+            SUPPORTED_IMAGE_MIMES,
+            SUPPORTED_DOCUMENT_MIMES,
+            SUPPORTED_AUDIO_MIMES,
+            SUPPORTED_VIDEO_MIMES,
+        )
+    )
+    raise ValueError(
+        f"Unsupported MIME type: '{mime_guess}'. "
+        f"Supported file formats in the SDK are: {sorted(all_supported)}"
+    )

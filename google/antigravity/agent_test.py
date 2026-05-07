@@ -100,7 +100,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
             text="Analyzed image content",
             steps=[
                 types.Step(
-                    is_final_response=True, content="Analyzed image content"
+                    is_complete_response=True, content="Analyzed image content"
                 )
             ],
         )
@@ -110,9 +110,7 @@ class AgentTest(unittest.IsolatedAsyncioTestCase):
     async with agent.Agent(config) as ag:
       multimodal_prompt = [
           "Look at this:",
-          types.Part(
-              inline_data=types.Blob(mime_type="image/png", data=b"png_bytes")
-          ),
+          types.Image(mime_type="image/png", data=b"png_bytes"),
       ]
       response = await ag.chat(multimodal_prompt)
       self.assertEqual(response.text, "Analyzed image content")

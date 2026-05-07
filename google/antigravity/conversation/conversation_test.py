@@ -82,9 +82,7 @@ class ConversationSendTest(unittest.IsolatedAsyncioTestCase):
 
     multimodal_prompt = [
         "Context string",
-        types.Part(
-            inline_data=types.Blob(mime_type="application/pdf", data=b"pdf")
-        ),
+        types.Document(mime_type="application/pdf", data=b"pdf"),
     ]
     await conv.send(multimodal_prompt)
 
@@ -326,11 +324,7 @@ class ConversationChatTest(unittest.IsolatedAsyncioTestCase):
 
     multimodal_prompt = [
         "Analyze this blueprint:",
-        types.Part(
-            inline_data=types.Blob(
-                mime_type="image/png", data=b"blueprint_bytes"
-            )
-        ),
+        types.Image(mime_type="image/png", data=b"blueprint_bytes"),
     ]
     result = await conv.chat(multimodal_prompt)
 

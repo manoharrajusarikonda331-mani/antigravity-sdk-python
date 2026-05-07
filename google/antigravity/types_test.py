@@ -21,8 +21,10 @@ and the AntigravityValidationError wrapper.
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 
 from absl.testing import absltest
+from absl.testing import parameterized
 import pydantic
 
 from google.antigravity import types
@@ -705,115 +707,139 @@ class AntigravityConnectionErrorTest(unittest.TestCase):
     self.assertEqual(str(err), "timeout")
 
 
-class PartTest(unittest.TestCase):
-  """Validates the unified Part Pydantic model and its factories."""
+class ImageTest(unittest.TestCase):
+  """Tests for the Image content attachment primitive and its validators."""
 
   def test_basic_construction(self):
-    """Verifies that a Part can be successfully constructed with valid arguments."""
-    part = types.Part(
-        inline_data=types.Blob(mime_type="image/png", data=b"fake_png_data"),
-        description="test diagram",
+    """Verifies that an Image can be successfully constructed with valid arguments."""
+    img = types.Image(
+        data=b"png_data", mime_type="image/png", description="diagram"
     )
-    self.assertEqual(part.inline_data.mime_type, "image/png")
-    self.assertEqual(part.inline_data.data, b"fake_png_data")
-    self.assertEqual(part.description, "test diagram")
-
-  def test_default_description_is_none(self):
-    """Verifies that description defaults to None when omitted."""
-    part = types.Part(
-        inline_data=types.Blob(mime_type="application/pdf", data=b"pdf_bytes")
-    )
-    self.assertIsNone(part.description)
+    self.assertEqual(img.data, b"png_data")
+    self.assertEqual(img.mime_type, "image/png")
+    self.assertEqual(img.description, "diagram")
 
   def test_unsupported_mime_type_raises(self):
-    """Verifies that an unsupported MIME type triggers a Pydantic ValidationError."""
+    """Verifies that an unsupported Image MIME type triggers ValidationError."""
     with self.assertRaises(pydantic.ValidationError):
-      types.Blob(
-          mime_type="image/gif", data=b"gif_bytes"
-      )  # GIF is not supported.
-
-  def test_text_part_contains_flat_text(self):
-    """Verifies that a text Part correctly contains the flat string value."""
-    part = types.Part.from_text(text="hello world")
-    self.assertEqual(part.text, "hello world")
-    self.assertIsNone(part.inline_data)
-
-  def test_text_property_returns_none_for_binaries(self):
-    """Verifies that the text property returns None for non-text modalities."""
-    part = types.Part(
-        inline_data=types.Blob(mime_type="image/jpeg", data=b"jpeg_bytes")
-    )
-    self.assertIsNone(part.text)
+      types.Image(data=b"gif_bytes", mime_type="image/gif")
 
   def test_from_file_success(self):
-    """Verifies that from_file factory reads bytes and infers MIME type successfully."""
+    """Verifies that from_file loader loads bytes and guesses MIME correctly."""
     with tempfile.TemporaryDirectory() as tmpdir:
-      tmp_file = pathlib.Path(tmpdir) / "sample_doc.pdf"
-      fake_bytes = b"%PDF-1.4 sample pdf content"
+      tmp_file = pathlib.Path(tmpdir) / "photo.png"
+      fake_bytes = b"png_file_content"
       tmp_file.write_bytes(fake_bytes)
 
-      part = types.Part.from_file(tmp_file, description="annual report")
-      self.assertEqual(part.inline_data.mime_type, "application/pdf")
-      self.assertEqual(part.inline_data.data, fake_bytes)
-      self.assertEqual(part.description, "annual report")
+      img = types.Image.from_file(tmp_file, description="profile photo")
+      self.assertEqual(img.data, fake_bytes)
+      self.assertEqual(img.mime_type, "image/png")
+      self.assertEqual(img.description, "profile photo")
 
-  def test_from_file_non_existent_path_raises_error(self):
+
+class AudioTest(unittest.TestCase):
+  """Validates the Audio content attachment primitive and its validators."""
+
+  def test_basic_construction(self):
+    """Verifies that an Audio can be successfully constructed with valid arguments."""
+    audio = types.Audio(data=b"mp3_data", mime_type="audio/mp3")
+    self.assertEqual(audio.data, b"mp3_data")
+    self.assertEqual(audio.mime_type, "audio/mp3")
+
+  def test_unsupported_mime_type_raises(self):
+    """Verifies that an unsupported Audio MIME type triggers ValidationError."""
+    with self.assertRaises(pydantic.ValidationError):
+      types.Audio(data=b"wav_bytes", mime_type="audio/unsupported-wav")
+
+
+class VideoTest(unittest.TestCase):
+  """Validates the Video content attachment primitive and its validators."""
+
+  def test_basic_construction(self):
+    """Verifies that a Video can be successfully constructed with valid arguments."""
+    video = types.Video(data=b"mp4_data", mime_type="video/mp4")
+    self.assertEqual(video.data, b"mp4_data")
+    self.assertEqual(video.mime_type, "video/mp4")
+
+  def test_unsupported_mime_type_raises(self):
+    """Verifies that an unsupported Video MIME type triggers ValidationError."""
+    with self.assertRaises(pydantic.ValidationError):
+      types.Video(data=b"mov_bytes", mime_type="video/unsupported-mov")
+
+
+class ContentFromFileResolverTest(parameterized.TestCase):
+  """Validates the global from_file content resolver helper function."""
+
+  @parameterized.named_parameters(
+      ("image", "diagram.png", types.Image, "image/png"),
+      ("document", "report.pdf", types.Document, "application/pdf"),
+      ("audio", "clip.mp3", types.Audio, "audio/mpeg"),
+      ("video", "movie.mp4", types.Video, "video/mp4"),
+  )
+  def test_resolves_from_file(self, filename, expected_class, expected_mime):
+    """Verifies that local files are resolved to the correct Content primitives."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+      tmp_file = pathlib.Path(tmpdir) / filename
+      tmp_file.write_bytes(b"fake_bytes")
+
+      res = types.from_file(tmp_file, description="test asset")
+      self.assertIsInstance(res, expected_class)
+      self.assertEqual(res.mime_type, expected_mime)
+      self.assertEqual(res.description, "test asset")
+
+  def test_non_existent_path_raises_error(self):
     """Verifies that passing a non-existent path triggers FileNotFoundError."""
     with self.assertRaises(FileNotFoundError):
-      types.Part.from_file("non_existent_file_xyz.png")
+      types.from_file("non_existent_file_xyz.png")
 
-  def test_from_file_directory_path_raises_error(self):
+  def test_directory_path_raises_error(self):
     """Verifies that passing a path targeting a directory triggers IsADirectoryError."""
     with tempfile.TemporaryDirectory() as tmpdir:
       with self.assertRaises(IsADirectoryError):
-        types.Part.from_file(tmpdir)
+        types.from_file(tmpdir)
 
-  def test_from_file_with_explicit_mime_type_override(self):
-    """Verifies that passing an explicit mime_type override bypasses extension guessing."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-      # Create an extensionless file path containing raw bytes
-      tmp_file = pathlib.Path(tmpdir) / "unknown_file_system_node"
-      fake_bytes = b"fake_png_data_stream_content"
-      tmp_file.write_bytes(fake_bytes)
-
-      # Manually force a mime_type override parameter
-      part = types.Part.from_file(
-          tmp_file,
-          mime_type="image/png",
-          description="forced manual type override",
-      )
-      self.assertEqual(part.inline_data.mime_type, "image/png")
-      self.assertEqual(part.inline_data.data, fake_bytes)
-      self.assertEqual(part.description, "forced manual type override")
-
-  def test_from_file_inference_failure_raises_clear_value_error(self):
+  def test_inference_failure_raises_clear_value_error(self):
     """Verifies that an extensionless path failure raises a descriptive ValueError."""
     with tempfile.TemporaryDirectory() as tmpdir:
       tmp_file = pathlib.Path(tmpdir) / "extensionless_data_blob"
       tmp_file.write_bytes(b"some_anonymous_bytes")
 
-      # Omitting mime_type on an extensionless path should throw ValueError
-      with self.assertRaises(ValueError) as ctx:
-        types.Part.from_file(tmp_file)
+      with self.assertRaisesRegex(
+          ValueError, "Could not infer a valid MIME type"
+      ):
+        types.from_file(tmp_file)
 
-      self.assertIn("Could not infer MIME type", str(ctx.exception))
-      self.assertIn(
-          "Please pass an explicit valid mime_type", str(ctx.exception)
-      )
+  def test_permission_error_wrapping(self):
+    """Verifies that permission errors are caught and wrapped appropriately."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+      tmp_file = pathlib.Path(tmpdir) / "locked.png"
+      tmp_file.write_bytes(b"data")
 
-  def test_part_sum_type_mutual_exclusion(self):
-    """Verifies that a Part cannot occupy more than one content slot simultaneously."""
-    with self.assertRaises(pydantic.ValidationError):
-      types.Part(
-          text="Conflict text",
-          inline_data=types.Blob(mime_type="image/png", data=b"png_data"),
-      )
+      # Mock read_bytes to raise PermissionError
+      with mock.patch.object(
+          pathlib.Path,
+          "read_bytes",
+          autospec=True,
+          side_effect=PermissionError("access denied"),
+      ):
+        with self.assertRaisesRegex(PermissionError, "Permission denied"):
+          types.from_file(tmp_file)
 
-  def test_part_from_text_constructor_success(self):
-    """Verifies that Part.from_text constructor sets text properties flawlessly."""
-    part = types.Part.from_text(text="Hello text part")
-    self.assertEqual(part.text, "Hello text part")
-    self.assertIsNone(part.inline_data)
+  def test_os_error_wrapping(self):
+    """Verifies that OS-level read errors are caught and wrapped appropriately."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+      tmp_file = pathlib.Path(tmpdir) / "faulty.png"
+      tmp_file.write_bytes(b"data")
+
+      # Mock read_bytes to raise OSError
+      with mock.patch.object(
+          pathlib.Path,
+          "read_bytes",
+          autospec=True,
+          side_effect=OSError("disk read failure"),
+      ):
+        with self.assertRaisesRegex(OSError, "Failed to read file"):
+          types.from_file(tmp_file)
 
 
 if __name__ == "__main__":

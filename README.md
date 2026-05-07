@@ -32,7 +32,7 @@ async def main():
     )
     async with Agent(config) as agent:
         response = await agent.chat("What files are in the current directory?")
-        print(response)
+        print(response.text)
 
 async def run():
     await main()
@@ -103,20 +103,33 @@ asyncio.run(main())
 
 ### Multimodal Ingestion
 
-Pass rich multimedia file attachments (images, videos, audio, and documents) to the agent alongside textual instruction prompt lists:
+Pass rich multimedia file attachments (images, videos, audio, and documents) to the agent alongside textual instruction prompt lists.
+
+You can attach assets **directly using content classes** (perfect for in-memory bytes) or **conveniently from a filesystem path** (which automatically resolves types and guesses MIME formats):
 
 ```python
-from google.antigravity import Agent, LocalAgentConfig, Part
+from google.antigravity import Agent, LocalAgentConfig, Image, from_file
 
 config = LocalAgentConfig(system_instructions="You are an expert software architect.")
 async with Agent(config) as agent:
-    # Load local multimedia assets seamlessly via Part.from_file
-    image_part = Part.from_file("diagram.png", description="System design chart")
+    # 1. Flat filesystem shortcut (automatically resolves as types.Document)
+    pdf_spec = from_file("spec.pdf")
     
-    # Send a mixed content list
-    prompt = ["Analyze this architecture chart and list three security vulnerabilities:", image_part]
+    # 2. Direct constructor instantiation (perfect for in-memory raw bytes)
+    chart_image = Image(
+        data=b"raw_png_bytes_here", 
+        mime_type="image/png", 
+        description="Architecture blueprint"
+    )
+    
+    # Send a mixed list of text instructions and content classes
+    prompt = [
+        "Analyze this chart against the specification and list three security vulnerabilities:",
+        chart_image,
+        pdf_spec
+    ]
     response = await agent.chat(prompt)
-    print(response)
+    print(response.text)
 ```
 
 ### Custom Tools

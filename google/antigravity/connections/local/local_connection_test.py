@@ -2686,17 +2686,18 @@ class LocalConnectionSendTest(unittest.IsolatedAsyncioTestCase):
     self.assertEqual(sent_data.get("userInput"), "")
     self.assertNotIn("complexUserInput", sent_data)
 
-  async def test_send_single_part_populates_complex_user_input(self):
-    """Verifies that a single Part object maps to the complex_user_input parts list."""
+  async def test_send_single_media_content_populates_complex_user_input(self):
+    """Verifies that a single rich Content primitive maps to the complex_user_input parts list."""
     conn = local_connection.LocalConnection(
         process=self.mock_process,
         ws=self.mock_ws,
     )
-    image_part = types.Part(
-        inline_data=types.Blob(mime_type="image/png", data=b"fake_png"),
+    image_content = types.Image(
+        mime_type="image/png",
+        data=b"fake_png",
         description="logo image",
     )
-    await conn.send(image_part)
+    await conn.send(image_content)
 
     self.assertEqual(len(self.mock_ws.sent_messages), 1)
     sent_data = json.loads(self.mock_ws.sent_messages[0])
@@ -2713,19 +2714,15 @@ class LocalConnectionSendTest(unittest.IsolatedAsyncioTestCase):
     # Protobuf JSON automatically base64-encodes binary bytes
     self.assertEqual(media["data"], "ZmFrZV9wbmc=")  # b"fake_png"
 
-  async def test_send_mixed_list_populates_multiple_complex_parts(self):
-    """Verifies that a list containing both strings and Part items compiles correctly to spec."""
+  async def test_send_mixed_list_populates_multiple_complex_content(self):
+    """Verifies that a list containing both strings and rich Content primitives compiles correctly to spec."""
     conn = local_connection.LocalConnection(
         process=self.mock_process,
         ws=self.mock_ws,
     )
     mixed_prompt = [
         "Context text instruction.",
-        types.Part(
-            inline_data=types.Blob(
-                mime_type="application/pdf", data=b"fake_pdf"
-            )
-        ),
+        types.Document(mime_type="application/pdf", data=b"fake_pdf"),
     ]
     await conn.send(mixed_prompt)
 

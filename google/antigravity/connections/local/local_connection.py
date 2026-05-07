@@ -39,7 +39,6 @@ from google.antigravity.hooks import hooks
 from google.antigravity.tools import tool_runner as t_runner
 
 
-
 resources = None
 
 
@@ -341,9 +340,9 @@ class LocalConnection(connection.Connection):
     elif isinstance(prompt, str):
       event = localharness_pb2.InputEvent(user_input=prompt)
     else:
-      parts_list = prompt if isinstance(prompt, list) else [prompt]
+      content_list = prompt if isinstance(prompt, list) else [prompt]
       user_input_pb = localharness_pb2.UserInput(
-          parts=[_to_proto_part(p) for p in parts_list]
+          parts=[_to_proto_input_content(c) for c in content_list]
       )
       event = localharness_pb2.InputEvent(complex_user_input=user_input_pb)
 
@@ -925,31 +924,25 @@ class LocalConnection(connection.Connection):
     await self._ws.send(json_format.MessageToJson(event))
 
 
-def _to_proto_part(part: str | types.Part) -> localharness_pb2.UserInput.Part:
-  """Helper factory converting dynamic prompt fragments into proto Parts."""
-  if isinstance(part, str):
-    return localharness_pb2.UserInput.Part(text=part)
+def _to_proto_input_content(
+    content: types.ContentPrimitive,
+) -> localharness_pb2.UserInput.Part:
+  """Converts dynamic prompt fragments into proto Parts."""
+  if isinstance(content, str):
+    return localharness_pb2.UserInput.Part(text=content)
 
-  if isinstance(part, types.Part):
-    if part.text is not None:
-      return localharness_pb2.UserInput.Part(text=part.text)
+  is_semantic_media = isinstance(
+      content, (types.Image, types.Document, types.Audio, types.Video)
+  )
+  if is_semantic_media:
+    media_pb = localharness_pb2.UserInput.Media(
+        mime_type=content.mime_type,
+        data=content.data,
+        description=content.description,
+    )
+    return localharness_pb2.UserInput.Part(media=media_pb)
 
-    if part.inline_data is not None:
-      blob = part.inline_data
-      if part.description:
-        media_pb = localharness_pb2.UserInput.Media(
-            mime_type=blob.mime_type,
-            data=blob.data,
-            description=part.description,
-        )
-      else:
-        media_pb = localharness_pb2.UserInput.Media(
-            mime_type=blob.mime_type,
-            data=blob.data,
-        )
-      return localharness_pb2.UserInput.Part(media=media_pb)
-
-  raise TypeError(f"Unsupported prompt part type: {type(part)}")
+  raise TypeError(f"Unsupported prompt content type: {type(content)}")
 
 
 def _get_default_binary_path() -> str:
