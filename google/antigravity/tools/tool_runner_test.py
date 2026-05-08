@@ -93,7 +93,7 @@ class ToolRunnerTest(absltest.TestCase):
 
     What: Checks error behavior for invalid unregister requests.
     Why: Confirms that removing a missing tool is an error.
-    How: Calls unregister for a dummy name within assertRaises.
+    How: Calls unregister for a placeholder name within assertRaises.
     """
 
     runner = tool_runner.ToolRunner()
@@ -105,7 +105,7 @@ class ToolRunnerTest(absltest.TestCase):
 
     What: Checks that execution invokes the callable and returns its value.
     Why: Validates basic sync tool execution path.
-    How: Executes a sync dummy tool and asserts the return message.
+    How: Executes a sync placeholder tool and asserts the return message.
     """
 
     runner = tool_runner.ToolRunner([_sample_tool])
@@ -137,7 +137,7 @@ class ToolRunnerTest(absltest.TestCase):
 
     What: Checks that execution awaits the coroutine and returns its value.
     Why: Validates async tool execution path.
-    How: Executes an async dummy tool and asserts the return sum.
+    How: Executes an async placeholder tool and asserts the return sum.
     """
 
     runner = tool_runner.ToolRunner([_async_tool])
@@ -149,7 +149,7 @@ class ToolRunnerTest(absltest.TestCase):
 
     What: Checks error behavior for invalid execution requests.
     Why: Alerts caller that requested tool is missing.
-    How: Invokes execute with a dummy name within assertRaises.
+    How: Invokes execute with a placeholder name within assertRaises.
     """
 
     runner = tool_runner.ToolRunner()
@@ -192,7 +192,7 @@ class ToolRunnerTest(absltest.TestCase):
     be executed safely by the ToolRunner.
     Why: Covers manual wrapping use-cases where users need explicit schemas
     attached to synchronous methods.
-    How: Registers a wrapped synchronous dummy tool, executes it, and asserts
+    How: Registers a wrapped synchronous placeholder tool, executes it, and asserts
     expected return string.
     """
     tool = tool_runner.ToolWithSchema(_sample_tool, {"type": "object"})
@@ -207,7 +207,7 @@ class ToolRunnerTest(absltest.TestCase):
     be executed safely by the ToolRunner.
     Why: Covers manual wrapping use-cases where users need explicit schemas
     attached to asynchronous methods (e.g. MCP tools).
-    How: Registers a wrapped asynchronous dummy tool, executes it, and asserts
+    How: Registers a wrapped asynchronous placeholder tool, executes it, and asserts
     expected return sum.
     """
     tool = tool_runner.ToolWithSchema(_async_tool, {"type": "object"})
