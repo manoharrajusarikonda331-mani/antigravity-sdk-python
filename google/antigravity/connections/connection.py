@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Base interfaces for connections in the Antigravity SDK.
+"""Base interfaces for connections in the Google Antigravity SDK.
 
 A Connection is the SDK's public interface for interacting with an agent
 backend, regardless of where the agent runs. Layer 2 APIs (Conversation,
@@ -21,7 +21,6 @@ AgentConfig) depend ONLY on this interface — never on transport details.
 A ConnectionStrategy knows how to establish a Connection for a specific
 backend type and how to tear it down.
 """
-
 
 import abc
 import json

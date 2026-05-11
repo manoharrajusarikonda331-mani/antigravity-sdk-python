@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Local connection for the Antigravity SDK."""
+"""Local connection for the Google Antigravity SDK."""
 
 import asyncio
 import collections

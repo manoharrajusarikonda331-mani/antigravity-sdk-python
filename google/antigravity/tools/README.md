@@ -1,6 +1,6 @@
-# Antigravity SDK Tools
+# Google Antigravity SDK Tools
 
-The `tools` package provides utilities for managing and executing tools within the Antigravity SDK. Tools are Python callables that the agent can invoke to perform actions or fetch information.
+The `tools` package provides utilities for managing and executing tools within the Google Antigravity SDK. Tools are Python callables that the agent can invoke to perform actions or fetch information.
 
 ## Core Concepts
 

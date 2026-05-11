@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Type definitions for Antigravity SDK.
+"""Type definitions for Google Antigravity SDK.
 
 These are the canonical SDK boundary types. All public SDK interfaces use these
 types. They are pure Python Pydantic V2 models with no proto dependencies.
@@ -581,7 +581,7 @@ class AskQuestionInteractionSpec(pydantic.BaseModel):
 
 
 class AntigravityConnectionError(Exception):
-  """Base class for connection errors in the Antigravity SDK.
+  """Base class for connection errors in the Google Antigravity SDK.
 
   Raised when a connection to an agent backend cannot be established or
   encounters a fatal protocol-level error.

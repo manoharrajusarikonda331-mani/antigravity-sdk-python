@@ -1,4 +1,4 @@
-# Antigravity SDK Triggers
+# Google Antigravity SDK Triggers
 
 Triggers are long-lived async functions that run alongside an agent session.
 They react to external events (cron schedules, file changes, webhooks) and

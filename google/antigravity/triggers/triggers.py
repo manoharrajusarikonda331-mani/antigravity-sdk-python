@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Core trigger interface for the Antigravity SDK.
+"""Core trigger interface for the Google Antigravity SDK.
 
 A Trigger is a long-lived async function that runs alongside an agent
 session. It reacts to external events (cron, file changes, webhooks)

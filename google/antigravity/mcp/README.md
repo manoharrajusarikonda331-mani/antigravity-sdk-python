@@ -1,4 +1,4 @@
-# Antigravity SDK MCP Integration
+# Google Antigravity SDK MCP Integration
 
 The `mcp` package provides integration with the Model Context Protocol (MCP), allowing the agent to use tools exposed by external MCP servers.
 

@@ -154,7 +154,7 @@ async def run():
     logging.info("Starting agent...")
     async with Agent(config) as agent:
 
-      print("\nAntigravity SDK Demo")
+      print("\nGoogle Antigravity SDK Demo")
       print("Type your message and press Enter • Ctrl+C to exit\n")
 
       while True:

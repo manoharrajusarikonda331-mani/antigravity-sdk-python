@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Local connection package for the Antigravity SDK.
+"""Local connection package for the Google Antigravity SDK.
 
 Re-exports the public API so that existing import paths like
 ``from ...connections.local_connection import LocalAgentConfig``

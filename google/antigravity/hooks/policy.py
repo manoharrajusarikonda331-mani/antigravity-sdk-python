@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tool call policy system for the Antigravity SDK.
+"""Tool call policy system for the Google Antigravity SDK.
 
 Provides a declarative API for expressing tool call policies (APPROVE, DENY,
 ASK_USER) that are enforced via the hooks system. Policies are evaluated using

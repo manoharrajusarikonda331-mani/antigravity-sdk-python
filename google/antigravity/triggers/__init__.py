@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Trigger system for the Antigravity SDK."""
+"""Trigger system for the Google Antigravity SDK."""
 
 from google.antigravity.triggers.helpers import every
 from google.antigravity.triggers.helpers import on_file_change

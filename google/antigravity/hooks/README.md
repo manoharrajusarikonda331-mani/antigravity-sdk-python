@@ -1,12 +1,12 @@
 # Antigravity Hook Architecture: Design and Implementation
 
 This document describes the design decisions and current implementation of the
-hook system in the Antigravity SDK, designed to support a
+hook system in the Google Antigravity SDK, designed to support a
 granular, secure, and symmetrical lifecycle.
 
 ## Overview
 
-Hooks in the Antigravity SDK allow users and system components to intercept,
+Hooks in the Google Antigravity SDK allow users and system components to intercept,
 observe, and modify the behavior of the agent at various stages of its execution
 lifecycle. They are essential for observability, policy enforcement, data
 sanitization, and interactive decision-making.

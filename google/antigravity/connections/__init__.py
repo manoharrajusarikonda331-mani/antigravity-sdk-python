@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Connections package for the Antigravity SDK."""
+"""Connections package for the Google Antigravity SDK."""

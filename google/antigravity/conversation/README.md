@@ -1,6 +1,6 @@
-# Antigravity SDK Conversation
+# Google Antigravity SDK Conversation
 
-The `conversation` package provides the `Conversation` class, which is the Layer 2 session API in the Antigravity SDK. It wraps a `Connection` and adds stateful session management features.
+The `conversation` package provides the `Conversation` class, which is the Layer 2 session API in the Google Antigravity SDK. It wraps a `Connection` and adds stateful session management features.
 
 ## Core Concepts
 

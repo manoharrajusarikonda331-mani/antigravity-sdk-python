@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for Antigravity SDK Pydantic type definitions.
+"""Tests for Google Antigravity SDK Pydantic type definitions.
 
 Validates model construction, validation, immutability, forward compatibility,
 and the AntigravityValidationError wrapper.

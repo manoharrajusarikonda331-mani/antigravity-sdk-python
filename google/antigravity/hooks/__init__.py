@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Hooks package for the Antigravity SDK."""
+"""Hooks package for the Google Antigravity SDK."""
 
 from google.antigravity.hooks import policy
 from google.antigravity.hooks.hooks import OnCompactionHook

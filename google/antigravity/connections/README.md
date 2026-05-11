@@ -1,4 +1,4 @@
-# Antigravity SDK Connections
+# Google Antigravity SDK Connections
 
 The `connections` package provides the abstraction layer for interacting with
 agent backends. It decouples the higher-level SDK components (like

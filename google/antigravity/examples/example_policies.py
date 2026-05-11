@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Example policies for the Antigravity SDK.
+"""Example policies for the Google Antigravity SDK.
 
 These are provided as examples and starting points for developers to iterate
 from. They demonstrate the value of strongly typed predicates.

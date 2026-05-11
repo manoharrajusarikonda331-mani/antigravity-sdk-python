@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Stateful conversation session for the Antigravity SDK.
+"""Stateful conversation session for the Google Antigravity SDK.
 
 Conversation is the Layer 2 session API. It wraps a Connection with:
 - Step history accumulation (with compaction index tracking)

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""In-process tool runner for the Antigravity SDK.
+"""In-process tool runner for the Google Antigravity SDK.
 
 Tools are Python callables that run directly in the SDK process. The
 ToolRunner is a registry and executor — it holds references to tool

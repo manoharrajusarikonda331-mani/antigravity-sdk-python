@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Release script for the Antigravity SDK.
+# Release script for the Google Antigravity SDK.
 #
 # Builds platform-specific wheels containing the pre-compiled Go
 # localharness binary and uploads them to the OSS Exit Gate for
@@ -71,7 +71,7 @@ if [[ -z "${VERSION}" ]]; then
   VERSION=$(python3 -I -c "import tomllib, pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
 fi
 
-echo "=== Antigravity SDK Release v${VERSION} ==="
+echo "=== Google Antigravity SDK Release v${VERSION} ==="
 
 # Install build/release tools with hash verification.
 # See go/pip-install-remediation.
