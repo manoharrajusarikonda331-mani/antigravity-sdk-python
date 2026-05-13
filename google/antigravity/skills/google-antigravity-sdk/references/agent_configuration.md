@@ -3,15 +3,13 @@
 # Advanced Agent Configuration Guide
 
 This guide provides instructions on how to perform advanced configuration for
-Antigravity SDK agents.
+Google Antigravity SDK agents.
 
 ## Model Selection
 
 ### Default Model
 
-For the Antigravity SDK, the preferred default model is
-`gemini-3-flash-preview`. Use this model unless there is a specific reason to
-use another one.
+Google Antigravity SDK's default model is `gemini-3.5-flash`.
 
 ### Finding Valid Models
 
@@ -40,7 +38,7 @@ Here are small code snippets demonstrating advanced configurations using
 from google.antigravity import Agent, LocalAgentConfig
 
 config = LocalAgentConfig(
-    model="gemini-3-flash-preview",
+    model="gemini-3.5-flash",
 )
 async with Agent(config=config) as agent:
     # Use the agent
