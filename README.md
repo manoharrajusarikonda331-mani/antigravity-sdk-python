@@ -44,7 +44,7 @@ from google.antigravity import Agent, LocalAgentConfig
 async def main():
     config = LocalAgentConfig(
         system_instructions="You are an expert assistant for codebase navigation.",
-        api_key="GEMINI_API_KEY",
+        # api_key="your_api_key_here",
     )
     async with Agent(config) as agent:
         response = await agent.chat("What files are in the current directory?")
@@ -104,7 +104,7 @@ from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig
 from google.antigravity.utils.interactive import run_interactive_loop
 
 config = LocalAgentConfig(
-    api_key="GEMINI_API_KEY",
+    # api_key="your_api_key_here",
     capabilities=CapabilitiesConfig(),
 )
 async with Agent(config) as agent:
@@ -129,7 +129,7 @@ async def main():
     tool_runner = ToolRunner()
     strategy = LocalConnectionStrategy(
         tool_runner=tool_runner,
-        gemini_config=GeminiConfig(api_key="GEMINI_API_KEY"),
+        # gemini_config=GeminiConfig(api_key="your_api_key_here"),
     )
     
     async with Conversation.create(strategy) as conversation:
