@@ -78,6 +78,8 @@ relevant information.
 -   If the user needs to intercept agent lifecycle events (e.g., pre/post turn,
     tool execution, errors) to customize execution flow, read
     `examples/getting_started/hooks.md`.
+-   If the user needs to implement turn-level cancellation or programmatic
+    stream aborts, read `examples/getting_started/cancellation.md`.
 -   If the user needs to implement persistent agents that remember past
     interactions across sessions, read
     `examples/getting_started/persistence.md`.
